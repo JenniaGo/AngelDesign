@@ -5,11 +5,11 @@ provider "kubernetes" {
 }
 
 data "aws_eks_cluster" "Angeldesign-cluster" {
-  name = module.eks.cluster_name
+  name = module.eks.cluster_id
 }
 
 data "aws_eks_cluster_auth" "Angeldesign-cluster"{
-  name = module.eks.cluster_name
+  name = module.eks.cluster_id
 }
 
 module "eks" {
@@ -31,7 +31,7 @@ module "eks" {
     dev = {
       min_size     = 1
       max_size     = 3
-      desired_size = 3
+      desired_size = 2
 
       instance_types = ["t2.small"]
     }
