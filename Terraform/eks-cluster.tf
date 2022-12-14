@@ -14,12 +14,12 @@ data "aws_eks_cluster_auth" "Angeldesign-cluster"{
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 17.0"
+  version = "19.0.4"
 
   cluster_name = "angeldesign-eks-cluster"
-  cluster_version = "1.17"
+  cluster_version = "1.21"
 
-  subnets = module.AngelDesign-vpc.private_subnets
+  subnet_ids = module.AngelDesign-vpc.private_subnets
   vpc_id = module.AngelDesign-vpc.vpc_id
 
   tags = {
@@ -27,16 +27,13 @@ module "eks" {
     application = "myapp"
   }
 
-  worker_groups = [
-    {
-      instance_type = "t2.small"
-      name = "worker-group-1"
-      asg_desired_capacity = 2
-    },
-    {
-      instance_type = "t2.small"
-      name = "worker-group-2"
-      asg_desired_capacity = 2
+  eks_managed_node_groups = {
+    dev = {
+      min_size     = 1
+      max_size     = 3
+      desired_size = 3
+
+      instance_types = ["t2.small"]
     }
-  ]
+  }
 }
