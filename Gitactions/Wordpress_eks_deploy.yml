@@ -1,0 +1,66 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the code
+      - uses: actions/checkout@v2
+
+      # Build the Docker image for the WordPress application
+      - name: Build Docker image
+        uses: docker/build-push-action@v1
+        with:
+          context: .
+          dockerfile: Dockerfile
+          tags: latest
+
+      # Push the Docker image to the AWS ECR registry
+      - name: Push to ECR
+        uses: aws-actions/amazon-ecr-push-action@v1
+        with:
+          # Replace these placeholders with your own values
+          registry-url: 123456789012.dkr.ecr.us-east-1.amazonaws.com
+          repository: my-wordpress-app
+          tag: latest
+          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Fetch the EKS cluster configuration
+      - name: Fetch EKS cluster configuration
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # Deploy the application to the EKS cluster
+      - name: Deploy to EKS
+        uses: aws-actions/amazon-eks-deploy-helm-chart-action@v1
+        with:
+          # Replace these placeholders with your own values
+          cluster-name: my-eks-cluster
+          chart-directory: charts/wordpress
+          release-name: my-wordpress-release
+          namespace: default
+          set:
+            image.tag=latest
+            externalDatabase.host=my-rds-instance.1234567890.us-east-1.rds.amazonaws.com
+            externalDatabase.port=3306
+            externalDatabase.username=admin
+            externalDatabase.password=mypassword
+            externalDatabase.database=mydatabase
+            media.s3.bucket=my-s3-bucket
+            media.s3.region=us-east-1
+            media.s3.accessKey=${AWS_ACCESS_KEY_ID}
+            media.s3.secretKey=${AWS_SECRET_ACCESS_KEY}
+
